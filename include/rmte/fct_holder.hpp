@@ -28,7 +28,7 @@ struct function_holder : public abstract_function {
 	}
 
 	template <size_t... I>
-	ReturnType callFunc(T* type, tuple_type msg, std::index_sequence<I...>)
+    ReturnType fct_call(T* type, tuple_type& msg, std::index_sequence<I...>)
 	{
 		return ((type)->*(func_ptr))(std::get<I>(msg)...);
 	}
@@ -37,7 +37,7 @@ struct function_holder : public abstract_function {
 	{
 		tuple_type msg = obj.as<std::tuple<Args...>>();
 		static constexpr auto size = std::tuple_size<tuple_type>::value;
-		ReturnType rt = callFunc(static_cast<T*>(t), msg, std::make_index_sequence<size>{});
+		ReturnType rt = fct_call(static_cast<T*>(t), msg, std::make_index_sequence<size>{});
 		std::stringstream ss;
 		msgpack::pack(ss, rt);
 		return ss;
@@ -62,7 +62,7 @@ struct function_holder<T, void, Args...> : public abstract_function {
 	}
 
 	template <size_t... I>
-	void callFunc(T* type, tuple_type msg, std::index_sequence<I...>)
+	void fct_call(T* type, tuple_type& msg, std::index_sequence<I...>)
 	{
 		((type)->*(func_ptr))(std::get<I>(msg)...);
 	}
@@ -70,7 +70,8 @@ struct function_holder<T, void, Args...> : public abstract_function {
 	virtual std::stringstream Call(void* t, const msgpack::object& obj)
 	{
 		static constexpr auto size = std::tuple_size<tuple_type>::value;
-		callFunc(static_cast<T*>(t), obj.as<std::tuple<Args...>>(), std::make_index_sequence<size>{});
+        tuple_type msg = obj.as<std::tuple<Args...>>();
+		fct_call(static_cast<T*>(t), msg, std::make_index_sequence<size>{});
 		return std::stringstream();
 	}
 

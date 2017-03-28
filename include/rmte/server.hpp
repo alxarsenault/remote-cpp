@@ -4,17 +4,17 @@
 #include <utility>
 #include <boost/asio.hpp>
 
-//#include "remote_call.hpp"
 #include "fct_map.hpp"
+#include "pack.hpp"
 
 namespace rmte {
 template <typename T>
-class remote_server;
+class server;
 
 template <typename T>
 class RemoteSession : public std::enable_shared_from_this<RemoteSession<T>> {
 public:
-	RemoteSession(remote_server<T>* remote_server, boost::asio::ip::tcp::socket socket)
+	RemoteSession(server<T>* remote_server, boost::asio::ip::tcp::socket socket)
 		: _remote_server(remote_server)
 		, socket_(std::move(socket))
 	{
@@ -49,30 +49,20 @@ private:
 			boost::asio::transfer_exactly(_buffer_length),
 			[this, self](boost::system::error_code ec, std::size_t) {
 				if (!ec) {
+
 					std::stringstream ss;
 					ss.write((const char*)&_data[0], _data.size());
 
 					std::size_t offset = 0;
-					msgpack::object_handle obj_handle_name
-						= msgpack::unpack(ss.str().data(), ss.str().size(), offset);
-					const msgpack::object& obj_name = obj_handle_name.get();
-
-					const std::string fct_name = obj_name.as<std::string>();
-
-					msgpack::object_handle obj_handle_param
-						= msgpack::unpack(ss.str().data(), ss.str().size(), offset);
-					const msgpack::object& obj_param = obj_handle_param.get();
-
-					_returned_ss = _remote_server->Call(fct_name, obj_param);
+					std::string fct_name = get_obj_from_sstream<std::string>(ss, offset);
+					_returned_ss = _remote_server->Call(fct_name, get_pack_obj_from_sstream(ss, offset));
 
 					_buffer_length = 0;
 					_data.clear();
 
-					std::vector<std::uint8_t> dd(
-						(std::istreambuf_iterator<char>(_returned_ss)), std::istreambuf_iterator<char>());
-
-					if (!dd.empty()) {
-						_returned_data = dd;
+					if (get_sstream_size(_returned_ss)) {
+						_returned_data = sstream_to_vector(std::move(_returned_ss));
+						_returned_ss = std::stringstream();
 						do_write();
 						return;
 					}
@@ -90,9 +80,18 @@ private:
 		boost::asio::async_write(socket_, boost::asio::buffer(&_returned_length, sizeof(unsigned int)),
 			[this, self](boost::system::error_code ec, std::size_t /*length*/) {
 				if (!ec) {
-					boost::asio::write(
-						socket_, boost::asio::buffer((const char*)&_returned_data[0], _returned_data.size()));
+					do_write_content();
+				}
 
+			});
+	}
+
+	void do_write_content()
+	{
+		auto self(this->shared_from_this());
+		boost::asio::async_write(socket_, boost::asio::buffer(_returned_data),
+			[this, self](boost::system::error_code ec, std::size_t /*length*/) {
+				if (!ec) {
 					_returned_ss.clear();
 					_returned_length = 0;
 					_returned_data.clear();
@@ -103,7 +102,7 @@ private:
 			});
 	}
 
-	remote_server<T>* _remote_server = nullptr;
+	server<T>* _remote_server = nullptr;
 	boost::asio::ip::tcp::socket socket_;
 	std::vector<std::uint8_t> _data;
 	unsigned int _buffer_length = 0;
@@ -113,9 +112,9 @@ private:
 };
 
 template <typename T>
-class remote_server : public rmte::fct_map {
+class server : public rmte::fct_map {
 public:
-	remote_server(T* handle, short port)
+	server(T* handle, short port)
 		: _acceptor(_io_service, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
 		, _socket(_io_service)
 		, _handle(handle)
@@ -127,7 +126,7 @@ public:
 		do_accept();
 	}
 
-	void Run()
+	void run()
 	{
 		try {
 			_io_service.run();

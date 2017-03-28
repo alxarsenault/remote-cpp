@@ -1,24 +1,24 @@
 
 #include <fst/print.h>
 #include "server_interface.hpp"
-#include "rmte/remote_server.hpp"
+#include "rmte/server.hpp"
 
 #include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
-class Server : public ServerInterface, public rmte::remote_server<Server> {
+class Server : public ServerInterface, public rmte::server<Server> {
 public:
 	Server(short port)
-		: rmte::remote_server<Server>(this, port)
+		: rmte::server<Server>(this, port)
 	{
 		RMTE_REGISTER_FUNCTION(ServerInterface::CreateFolder);
 		RMTE_REGISTER_FUNCTION(ServerInterface::GetId);
 		RMTE_REGISTER_FUNCTION(ServerInterface::MyFunction2);
 		RMTE_REGISTER_FUNCTION(ServerInterface::GetNames);
 		RMTE_REGISTER_FUNCTION(ServerInterface::AddName);
-		RMTE_REGISTER_FUNCTION(ServerInterface::SendFile);
+		RMTE_REGISTER_FUNCTION(ServerInterface::SendFile);        
 	}
 
 	virtual void CreateFolder(std::string s0)
@@ -84,7 +84,7 @@ private:
 int main()
 {
 	Server server(5000);
-	server.Run();
+	server.run();
 
 	return 0;
 }

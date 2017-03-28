@@ -48,9 +48,10 @@ find_package(Boost COMPONENTS system REQUIRED)
 
 file(GLOB_RECURSE RMTE_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include/rmte/*.hpp)
 file(GLOB FOLDER_FILE_RMTE_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include/rmte/*.hpp)
+# file(GLOB CLIENT_FOLDER_FILE_RMTE_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include/rmte/client/*.hpp)
 
 source_group("include" FILES ${FOLDER_FILE_RMTE_HEADER_FILES})
-
+# source_group("include\\client" FILES ${CLIENT_FOLDER_FILE_RMTE_HEADER_FILES})
 # Dummy project.
 add_library(rmte_header STATIC ${RMTE_HEADER_FILES})
 set_target_properties(rmte_header PROPERTIES LINKER_LANGUAGE CXX)

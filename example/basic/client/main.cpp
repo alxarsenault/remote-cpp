@@ -2,48 +2,48 @@
 #include <iterator>
 #include <fstream>
 #include "server_interface.hpp"
-#include "rmte/remote_client.hpp"
 
-class Client : public ServerInterface, public rmte::remote_client {
+#include "rmte/client.hpp"
+
+class Client : public ServerInterface, public rmte::client {
 public:
 	virtual void CreateFolder(std::string s0)
 	{
-		return Call(RMTE_FUNC_INFO(ServerInterface::CreateFolder), s0);
+		return call(RMTE_FUNC_INFO(ServerInterface::CreateFolder), s0);
 	}
 
 	virtual std::string GetId()
 	{
-		return Call(RMTE_FUNC_INFO(ServerInterface::GetId));
+		return call(RMTE_FUNC_INFO(ServerInterface::GetId));
 	}
 
 	virtual int MyFunction2(int a, int b, int c)
 	{
-		return Call(RMTE_FUNC_INFO(ServerInterface::MyFunction2), a, b, c);
+		return call(RMTE_FUNC_INFO(ServerInterface::MyFunction2), a, b, c);
 	}
 
 	virtual std::vector<std::string> GetNames(std::string client_id)
 	{
-		return Call(RMTE_FUNC_INFO(ServerInterface::GetNames), client_id);
+		return call(RMTE_FUNC_INFO(ServerInterface::GetNames), client_id);
 	}
 
 	virtual void AddName(std::string client_id, std::string name)
 	{
-		return Call(RMTE_FUNC_INFO(ServerInterface::AddName), client_id, name);
+		return call(RMTE_FUNC_INFO(ServerInterface::AddName), client_id, name);
 	}
 
 	virtual void SendFile(std::string file_name, std::vector<char> data)
 	{
-		return Call(RMTE_FUNC_INFO(ServerInterface::SendFile), file_name, data);
+		return call(RMTE_FUNC_INFO(ServerInterface::SendFile), file_name, data);
 	}
 };
 
 int main()
 {
 	Client client;
-	client.Connect("localhost", "5000");
+	client.connect("localhost", "5000");
 
 	client.CreateFolder("my_files");
-	//    client.AddName(client_id, "John");
 
 	std::ifstream testFile("/Users/alexarse/Desktop/pointer.png", std::ios::binary);
 
@@ -72,6 +72,6 @@ int main()
 		fst::print(n);
 	}
 
-	client.Close();
+	client.close();
 	return 0;
 }
